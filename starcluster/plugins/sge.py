@@ -55,6 +55,15 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
         node.ssh.execute('rm /etc/init.d/sge*', ignore_exit_status=True)
         self._inst_sge(node, exec_host=True)
 
+    def _set_sge_hvmem_node(self, node):
+        mem = float(
+            node.ssh.execute(
+                "free -m | grep -i mem | awk '{print $2}'")[0])/1000
+        log.info("Setting hvmem %sG on node %s" % (mem, node.alias))
+        node.ssh.execute(
+            'qconf -rattr exechost complex_values h_vmem=%sG %s' %
+            (mem, node.alias))
+
     def _create_sge_pe(self, name="orte", nodes=None, queue="all.q"):
         """
         Create or update an SGE parallel environment
@@ -104,6 +113,13 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
                              node.alias)
             node.ssh.execute('qconf -aattr queue slots "[%s=%d]" all.q' %
                              (node.alias, num_slots))
+            mem = float(
+                node.ssh.execute(
+                    "free -m | grep -i mem | awk '{print $2}'")[0])/1000
+            log.info("Setting hvmem %sG on node %s" % (mem, node.alias))
+            node.ssh.execute(
+                'qconf -rattr exechost complex_values h_vmem=%sG %s' %
+                (mem, node.alias))
 
     def _sge_path(self, path):
         return posixpath.join(self.SGE_ROOT, path)
@@ -152,6 +168,10 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
         self._inst_sge(master, exec_host=self.master_is_exec_host)
         # set all.q shell to bash
         master.ssh.execute('qconf -mattr queue shell "/bin/bash" all.q')
+        # make h_vmem a consumable recourse
+        master.ssh.execute(
+            "qconf -sc | sed '/h_vmem              h_vmem     MEMORY      <=    YES         NO         0        0/ c\h_vmem              h_vmem     MEMORY      <=    YES         YES        0        0' > sge.conf")
+        master.ssh.execute('qconf -Mc sge.conf && rm sge.conf')
         for node in self.nodes:
             self.pool.simple_job(self._add_to_sge, (node,), jobid=node.alias)
         self.pool.wait(numtasks=len(self.nodes))
@@ -193,6 +213,7 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
         self._add_sge_submit_host(node)
         self._add_to_sge(node)
         self._create_sge_pe()
+        self._set_sge_hvmem_node(node)
 
     def on_remove_node(self, node, nodes, master, user, user_shell, volumes):
         self._nodes = nodes
