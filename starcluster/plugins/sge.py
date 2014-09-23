@@ -59,10 +59,12 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
         mem = float(
             node.ssh.execute(
                 "free -m | grep -i mem | awk '{print $2}'")[0])/1000
+        slots = int(node.ssh.execute("nproc")[0])
         log.info("Setting hvmem %sG on node %s" % (mem, node.alias))
+        log.info("Setting slots %s on node %s" % (slots, node.alias))
         node.ssh.execute(
-            'qconf -rattr exechost complex_values h_vmem=%sG %s' %
-            (mem, node.alias))
+            'qconf -rattr exechost complex_values h_vmem=%sG,slots=%s %s' %
+            (mem, slots, node.alias))
 
     def _create_sge_pe(self, name="orte", nodes=None, queue="all.q"):
         """
@@ -116,10 +118,12 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
             mem = float(
                 node.ssh.execute(
                     "free -m | grep -i mem | awk '{print $2}'")[0])/1000
+            slots = int(node.ssh.execute("nproc")[0])
             log.info("Setting hvmem %sG on node %s" % (mem, node.alias))
+            log.info("Setting slots %s on node %s" % (slots, node.alias))
             node.ssh.execute(
-                'qconf -rattr exechost complex_values h_vmem=%sG %s' %
-                (mem, node.alias))
+                'qconf -rattr exechost complex_values h_vmem=%sG,slots=%s %s' %
+                (mem, slots, node.alias))
 
     def _sge_path(self, path):
         return posixpath.join(self.SGE_ROOT, path)
