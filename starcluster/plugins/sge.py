@@ -174,7 +174,7 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
         master.ssh.execute('qconf -mattr queue shell "/bin/bash" all.q')
         # make h_vmem a consumable recourse
         master.ssh.execute(
-            "qconf -sc | sed '/h_vmem              h_vmem     MEMORY      <=    YES         NO         0        0/ c\h_vmem              h_vmem     MEMORY      <=    YES         YES        0        0' > sge.conf")
+            "qconf -sc | sed '/h_vmem              h_vmem     MEMORY      <=    YES         NO         0        0/ c\h_vmem              h_vmem     MEMORY      <=    YES         JOB        0        0' > sge.conf")
         master.ssh.execute('qconf -Mc sge.conf && rm sge.conf')
         for node in self.nodes:
             self.pool.simple_job(self._add_to_sge, (node,), jobid=node.alias)
