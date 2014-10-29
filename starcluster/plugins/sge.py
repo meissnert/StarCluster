@@ -61,10 +61,10 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
                 "free -m | grep -i mem | awk '{print $2}'")[0])/1000
         slots = int(node.ssh.execute("nproc")[0])
         log.info("Setting h_vmem %sG on node %s" % (mem, node.alias))
-        log.info("Setting virtual_free %sG on node %s" % (mem, node.alias))
+        log.info("Setting mem_free %sG on node %s" % (mem, node.alias))
         log.info("Setting slots %s on node %s" % (slots, node.alias))
         node.ssh.execute(
-            'qconf -rattr exechost complex_values h_vmem=%sG,virtual_free=%sG,slots=%s %s' %
+            'qconf -rattr exechost complex_values h_vmem=%sG,mem_free=%sG,slots=%s %s' %
             (mem, mem, slots, node.alias))
 
     def _create_sge_pe(self, name="orte", nodes=None, queue="all.q"):
@@ -121,10 +121,10 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
                     "free -m | grep -i mem | awk '{print $2}'")[0])/1000
             slots = int(node.ssh.execute("nproc")[0])
             log.info("Setting h_vmem %sG on node %s" % (mem, node.alias))
-            log.info("Setting virtual_free %sG on node %s" % (mem, node.alias))
+            log.info("Setting mem_free %sG on node %s" % (mem, node.alias))
             log.info("Setting slots %s on node %s" % (slots, node.alias))
             node.ssh.execute(
-                'qconf -rattr exechost complex_values h_vmem=%sG,virtual_free=%sG,slots=%s %s' %
+                'qconf -rattr exechost complex_values h_vmem=%sG,mem_free=%sG,slots=%s %s' %
                 (mem, mem, slots, node.alias))
 
     def _sge_path(self, path):
@@ -179,7 +179,7 @@ class SGEPlugin(clustersetup.DefaultClusterSetup):
             "qconf -sc | sed '/h_vmem              h_vmem     MEMORY      <=    YES         NO         0        0/ c\h_vmem              h_vmem     MEMORY      <=    YES         JOB        0        0' > sge.conf")
         master.ssh.execute('qconf -Mc sge.conf && rm sge.conf')
         master.ssh.execute(
-            "qconf -sc | sed '/virtual_free              virtual_free     MEMORY      <=    YES         NO         0        0/ c\virtual_free              virtual_free     MEMORY      <=    YES         YES        1G        0' > sge.conf")    
+            "qconf -sc | sed '/mem_free              mem_free     MEMORY      <=    YES         NO         0        0/ c\mem_free              mem_free     MEMORY      <=    YES         YES        0         0' > sge.conf")    
         master.ssh.execute('qconf -Mc sge.conf && rm sge.conf')
         for node in self.nodes:
             self.pool.simple_job(self._add_to_sge, (node,), jobid=node.alias)
